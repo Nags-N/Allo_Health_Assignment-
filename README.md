@@ -2,6 +2,9 @@
 
 A real-time, concurrency-safe, multi-warehouse inventory reservation and fulfillment system built with Next.js, Prisma, PostgreSQL, and Upstash Redis.
 
+* **Live Deployment URL**: [https://allohealth-eta.vercel.app/](https://allohealth-eta.vercel.app/)
+* **GitHub Repository**: [https://github.com/Nags-N/Allo_Health_Assignment-](https://github.com/Nags-N/Allo_Health_Assignment-)
+
 ---
 
 ## Technical Features
