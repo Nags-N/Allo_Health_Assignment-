@@ -57,7 +57,7 @@ async function main() {
         description: 'Up to 2x more Active Noise Cancellation, plus Adaptive Audio and Transparency mode.',
         price: 2490000, // INR 24,900 in paise
         sku: 'AIRPODS-PRO-2',
-        imageUrl: 'https://images.unsplash.com/photo-1588449668365-d15e397f6787?auto=format&fit=crop&w=600&q=80',
+        imageUrl: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=600&q=80',
       },
     }),
     prisma.product.create({
