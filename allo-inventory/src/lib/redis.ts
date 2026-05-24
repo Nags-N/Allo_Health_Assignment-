@@ -9,7 +9,7 @@ export const redis = new Redis({
  * Utility to check and set idempotency keys.
  * Returns true if the operation should proceed, false if it was already handled.
  */
-export async function checkIdempotency(key: string): Promise<{ handled: boolean; response?: any }> {
+export async function checkIdempotency(key: string): Promise<{ handled: boolean; response?: unknown }> {
   if (!process.env.UPSTASH_REDIS_REST_URL) {
     // If no Redis, ignore idempotency logic
     return { handled: false }
@@ -22,7 +22,7 @@ export async function checkIdempotency(key: string): Promise<{ handled: boolean;
   return { handled: false }
 }
 
-export async function saveIdempotencyResponse(key: string, response: any): Promise<void> {
+export async function saveIdempotencyResponse(key: string, response: unknown): Promise<void> {
   if (!process.env.UPSTASH_REDIS_REST_URL) return
 
   // Cache for 24 hours

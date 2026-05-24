@@ -7,14 +7,14 @@ interface StockBadgeProps {
 
 export function StockBadge({ available, className }: StockBadgeProps) {
   let colorClass = "bg-green-100 text-green-800 border-green-200"
-  let text = \`\${available} available\`
+  let text = `${available} available`
 
   if (available === 0) {
     colorClass = "bg-red-100 text-red-800 border-red-200"
     text = "Out of stock"
   } else if (available <= 5) {
     colorClass = "bg-yellow-100 text-yellow-800 border-yellow-200"
-    text = \`Only \${available} left\`
+    text = `Only ${available} left`
   }
 
   return (

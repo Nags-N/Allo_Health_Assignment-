@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     // 1. Idempotency Check
     if (idempotencyKey) {
       const { handled, response } = await checkIdempotency(idempotencyKey)
-      if (handled) return NextResponse.json(response.body, { status: response.status })
+      if (handled && response) {
+        const cached = response as { status: number; body: unknown }
+        return NextResponse.json(cached.body, { status: cached.status })
+      }
     }
 
     // 2. Atomic Reservation Logic

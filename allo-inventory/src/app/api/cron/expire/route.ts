@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization')
-    if (process.env.CRON_SECRET && authHeader !== \`Bearer \${process.env.CRON_SECRET}\`) {
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -27,12 +27,12 @@ export async function GET(request: Request) {
 
       // Decrement reserved units for each
       for (const res of expiredReservations) {
-        await tx.$executeRaw\`
+        await tx.$executeRaw`
           UPDATE "StockLevel"
-          SET "reservedUnits" = "reservedUnits" - \${res.quantity},
+          SET "reservedUnits" = "reservedUnits" - ${res.quantity},
               "updatedAt" = NOW()
-          WHERE "productId" = \${res.productId} AND "warehouseId" = \${res.warehouseId}
-        \`
+          WHERE "productId" = ${res.productId} AND "warehouseId" = ${res.warehouseId}
+        `
       }
 
       return expiredReservations.length

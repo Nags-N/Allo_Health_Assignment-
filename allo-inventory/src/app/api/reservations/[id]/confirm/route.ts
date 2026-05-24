@@ -11,7 +11,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const idempotencyKey = request.headers.get('idempotency-key')
     if (idempotencyKey) {
       const { handled, response } = await checkIdempotency(idempotencyKey)
-      if (handled) return NextResponse.json(response.body, { status: response.status })
+      if (handled && response) {
+        const cached = response as { status: number; body: unknown }
+        return NextResponse.json(cached.body, { status: cached.status })
+      }
     }
 
     // Process confirm in a transaction
