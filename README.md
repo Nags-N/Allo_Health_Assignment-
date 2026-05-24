@@ -7,10 +7,10 @@ A real-time, concurrency-safe, multi-warehouse inventory reservation and fulfill
 
 ---
 
-## Technical Features
+## How I Handled the Core Requirements
 
 ### 1. Concurrency Control & Race Condition Prevention
-To guarantee that two shoppers cannot reserve the same unit simultaneously, we use a single raw SQL update query at the database level:
+To prevent two shoppers from placing a hold on the exact same unit at the same time, I wrote a single atomic SQL update query executed at the database level:
 ```sql
 UPDATE "StockLevel"
 SET "reservedUnits" = "reservedUnits" + $quantity,
@@ -19,19 +19,19 @@ WHERE "productId" = $productId
   AND "warehouseId" = $warehouseId
   AND ("totalUnits" - "reservedUnits") >= $quantity
 ```
-Because the update is atomic, the database's default transaction isolation locks the row and decrements available units only if the condition `(totalUnits - reservedUnits) >= quantity` holds true. If two requests execute this simultaneously for the last unit, exactly one will update a row (`updateCount === 1`) and succeed, while the other will return `0` modified rows and fail with a `409 Conflict`.
+By performing this check and update in a single atomic database statement, we let the database handle the row-level lock. If two concurrent requests try to reserve the last remaining unit, exactly one query will modify a row (`updateCount === 1`) and succeed, while the other will modify `0` rows and return a `409 Conflict`.
 
 ### 2. Idempotency Support (Bonus)
-Both the reserve and confirm endpoints support idempotency to prevent duplicate charges or double holds under unstable network conditions:
+I implemented idempotency for the reserve and confirm endpoints to protect against duplicate checkout submissions or double reservations in case of flaky network retries:
 * Clients send requests with an `Idempotency-Key` UUID header.
-* Upstash Redis caches the status and response payload for 24 hours.
-* If a retried request hits the server with the same key, the server returns the cached response directly without executing side effects.
+* I used Upstash Redis to cache the status and response payload for 24 hours.
+* If a retried request hits the server with the same key, it immediately returns the cached response from Redis without running the database side effects again.
 
-### 3. Hold Expiry Mechanism
-To prevent abandoned checkouts from permanently locking inventory, holds expire after 10 minutes using a three-layered approach:
-1. **Lazy Cleanup (On Read)**: Whenever a user loads `/api/products`, the server executes a fast Common Table Expression (CTE) query to find and release expired pending reservations and free up `reservedUnits` in the background.
+### 3. Stale Hold Expiry
+To prevent abandoned checkouts from permanently locking up stock, I built a 10-minute hold expiry system that cleans up stale reservations in three ways:
+1. **Lazy Cleanup (On Read)**: Whenever a user loads `/api/products`, the server runs a fast Common Table Expression (CTE) query to find and release expired pending reservations and free up `reservedUnits` in the background.
 2. **Pre-Confirm Validation (On Write)**: The `/api/reservations/:id/confirm` transaction checks the reservation's expiry timestamp. If it has passed, the confirmation is blocked, the reservation transitions to `EXPIRED`, units are released, and a `410 Gone` error is returned.
-3. **Active Cron Cleaner**: A secure background worker endpoint (`GET /api/cron/expire`) can be scheduled (e.g., via Vercel Cron or GitHub Actions) to run periodically and cleanup stale reservations.
+3. **Active Cron Cleaner**: I added a secure background worker endpoint (`GET /api/cron/expire`) that can be scheduled (e.g., via Vercel Cron or GitHub Actions) to run periodically and clean up stale reservations.
 
 ---
 
@@ -39,7 +39,7 @@ To prevent abandoned checkouts from permanently locking inventory, holds expire 
 
 ### Prerequisites
 * Node.js v18+
-* A hosted PostgreSQL instance (neon.tech, Supabase, or Railway)
+* A hosted PostgreSQL instance (Neon, Supabase, or Railway)
 * An Upstash Redis REST URL & token
 
 ### 1. Environment Configuration
@@ -85,5 +85,5 @@ Open [http://localhost:3000](http://localhost:3000) to view the application cata
 ---
 
 ## Trade-offs & Future Enhancements
-* **In-Memory Locking**: Currently, PostgreSQL row-level locks handle stock updates. At massive global scale, implementing a distributed Redis lock (e.g., Redlock) before hitting Postgres would further shield the database from heavy concurrent writes.
-* **Image Assets**: For ease of use in a demonstration environment, catalog images are sourced from Unsplash. In production, these should be served via an optimized CDN or Next.js `<Image>` component with proper domains configured.
+* **Database vs. Distributed Locks**: I chose to use PostgreSQL row-level locks because it is simple and highly robust for this scale. If this were a global application receiving millions of requests per second, I would introduce a distributed lock (like Redlock) using Upstash Redis to keep concurrent write load off the primary database.
+* **CDNs for Media**: For ease of use in a demonstration environment, catalog images are sourced from Unsplash. In a production build, I would host these on an optimized S3 bucket and serve them via a CDN with Next.js `<Image>` component optimization.
