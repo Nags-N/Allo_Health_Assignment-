@@ -40,7 +40,7 @@ To prevent abandoned checkouts from permanently locking inventory, holds expire 
 * An Upstash Redis REST URL & token
 
 ### 1. Environment Configuration
-Create a `.env` file in the `allo-inventory` directory with the following variables:
+Create a `.env` file in the root directory with the following variables:
 
 ```env
 # PostgreSQL connection strings
@@ -56,7 +56,7 @@ CRON_SECRET="your-cron-secret-here"
 ```
 
 ### 2. Install Dependencies
-Run from the `allo-inventory` directory:
+Run from the root directory:
 ```bash
 npm install
 ```
